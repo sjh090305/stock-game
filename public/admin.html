@@ -358,12 +358,12 @@ function dashHTML(){
       <div class="rank-bar"><div class="rank-bar-fill" style="width:${p}%;background:${cs[i]||'#475569'}"></div></div>
     </div>`;
   }).join('')||'<p style="color:var(--text3);font-size:13px">팀이 없습니다.</p>';
-const logs=[...(state.eventLog||[])].reverse().slice(0,30).map((l,i)=>`
-        <div style="display:flex;gap:10px;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px;align-items:center">
-          <span style="color:var(--text3);font-family:var(--font-mono);min-width:80px">${new Date(l.ts).toLocaleTimeString('ko-KR')}</span>
-          <span style="color:var(--text2);flex:1">${l.msg}</span>
-          <button class="btn btn-sm btn-danger" onclick="deleteLog(${i})" style="padding:2px 7px;font-size:11px">삭제</button>
-        </div>`).join('')||'<p style="color:var(--text3)">없음</p>'}
+  const logs=[...(state.eventLog||[])].reverse().slice(0,6).map((l,i)=>`
+    <div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;align-items:center">
+      <span style="color:var(--text3);font-family:var(--font-mono);min-width:72px">${new Date(l.ts).toLocaleTimeString('ko-KR')}</span>
+      <span style="color:var(--text2);flex:1">${l.msg}</span>
+      <button class="btn btn-sm btn-danger" onclick="send({type:'DELETE_LOG',index:${(state.eventLog||[]).length-1-i}})" style="padding:2px 6px;font-size:10px;flex-shrink:0">✕</button>
+    </div>`).join('')||'<p style="color:var(--text3);font-size:13px">없음</p>';
   return `<div style="display:grid;grid-template-columns:1fr 300px;gap:14px">
     <div><div class="grid4" style="margin-bottom:14px">${stockCards}</div>
       <div class="card"><div class="card-title">📊 팀 랭킹</div>${rankBars}</div></div>
@@ -525,15 +525,16 @@ function eventsHTML(){
     </div>
   </div>
   <div class="card" style="margin-top:14px">
-<div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
-  <span>📜 이벤트 로그</span>
-  <button class="btn btn-sm btn-danger" onclick="if(confirm('전체 삭제?'))clearAllLogs()">전체 삭제</button>
-</div>
+    <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+      <span>📜 이벤트 로그</span>
+      <button class="btn btn-sm btn-danger" onclick="if(confirm('이벤트 로그를 전체 삭제할까요?'))send({type:'CLEAR_LOGS'})">전체 삭제</button>
+    </div>
     <div style="max-height:220px;overflow-y:auto">
-      ${[...(state.eventLog||[])].reverse().slice(0,30).map(l=>`
-        <div style="display:flex;gap:10px;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">
+      ${[...(state.eventLog||[])].reverse().slice(0,30).map((l,i)=>`
+        <div style="display:flex;gap:10px;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px;align-items:center">
           <span style="color:var(--text3);font-family:var(--font-mono);min-width:80px">${new Date(l.ts).toLocaleTimeString('ko-KR')}</span>
-          <span style="color:var(--text2)">${l.msg}</span>
+          <span style="color:var(--text2);flex:1">${l.msg}</span>
+          <button class="btn btn-sm btn-danger" onclick="send({type:'DELETE_LOG',index:${(state.eventLog||[]).length-1-i}})" style="padding:2px 7px;font-size:11px;flex-shrink:0">삭제</button>
         </div>`).join('')||'<p style="color:var(--text3)">없음</p>'}
     </div>
   </div>`;
@@ -744,14 +745,6 @@ function toast(msg,type='info'){
   const el=document.createElement('div');el.className=`toast ${type}`;el.textContent=msg;
   document.getElementById('toast-container').appendChild(el);
   setTimeout(()=>el.remove(),3000);
-}
-function deleteLog(reversedIndex){
-  if(!state.eventLog)return;
-  const realIndex=state.eventLog.length-1-reversedIndex;
-  send({type:'DELETE_LOG',index:realIndex});
-}
-function clearAllLogs(){
-  send({type:'CLEAR_LOGS'});
 }
 </script>
 </body>
