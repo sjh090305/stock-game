@@ -1,1 +1,523 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>주식투자 게임</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0e1a;--bg2:#0f1525;--bg3:#151d2e;
+  --border:#1e2d45;--border2:#253550;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
+  --up:#f04040;--down:#2979ff;
+  --green:#22c55e;--red:#ef4444;--blue:#3b82f6;
+  --accent:#38bdf8;--accent2:#0284c7;
+  --khfood:#22c55e;--miratech:#3b82f6;--issuegames:#f97316;--bubblecoin:#a855f7;
+  --font-mono:'JetBrains Mono',monospace;--font:'Noto Sans KR',sans-serif;
+  --r:6px;--r2:10px;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;min-height:100vh}
+#login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:1000}
+.login-box{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:48px 36px;width:340px;text-align:center}
+.login-logo{font-family:var(--font-mono);font-size:36px;font-weight:700;color:var(--accent);letter-spacing:-3px;animation:glow 2s ease-in-out infinite alternate;margin-bottom:8px}
+@keyframes glow{from{text-shadow:0 0 6px rgba(56,189,248,.3)}to{text-shadow:0 0 20px rgba(56,189,248,.8)}}
+.login-box h1{font-size:20px;font-weight:700;margin-bottom:4px}
+.login-box p{color:var(--text3);font-size:13px;margin-bottom:24px}
+.conn-dot{width:7px;height:7px;border-radius:50%;background:var(--red);display:inline-block;margin-right:5px}
+.conn-dot.ok{background:var(--green)}
+.login-box input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);padding:11px 13px;font-family:var(--font-mono);font-size:14px;outline:none;margin-bottom:9px}
+.login-box input:focus{border-color:var(--accent)}
+.btn-primary{width:100%;background:var(--accent2);border:none;border-radius:var(--r);color:#fff;padding:12px;font-size:14px;font-weight:700;cursor:pointer;transition:.2s}
+.btn-primary:hover{background:var(--accent)}
+.login-err{color:var(--red);font-size:13px;margin-top:7px}
+.freeze-bar{background:rgba(59,130,246,.1);border-bottom:1px solid rgba(59,130,246,.3);padding:8px;text-align:center;font-size:13px;color:var(--blue);display:none}
+.freeze-bar.show{display:block}
+.news-ticker{background:var(--bg3);border-bottom:1px solid var(--border);padding:5px 0;overflow:hidden;white-space:nowrap;height:30px}
+.ticker-inner{display:inline-block;animation:scroll 25s linear infinite;padding-left:100%}
+.ticker-item{display:inline-block;padding:0 36px;font-size:12px;font-family:var(--font-mono);color:var(--text2)}
+.ticker-item b{color:var(--accent)}
+@keyframes scroll{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);height:52px;display:flex;align-items:center;padding:0 14px;gap:10px;position:sticky;top:0;z-index:100;overflow-x:auto}
+.topbar::-webkit-scrollbar{height:0}
+.topbar-logo{font-family:var(--font-mono);font-weight:700;font-size:15px;color:var(--accent);letter-spacing:-1px;white-space:nowrap}
+.team-badge{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:3px 10px;font-size:12px;white-space:nowrap}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.round-badge{background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);border-radius:var(--r);padding:3px 9px;font-family:var(--font-mono);font-size:12px;color:var(--accent)}
+.timer{font-family:var(--font-mono);font-size:15px;font-weight:700}
+.timer.warn{color:var(--up);animation:blink .8s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+.nav-tabs{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);overflow-x:auto}
+.nav-tabs::-webkit-scrollbar{height:0}
+.nav-tab{padding:10px 16px;font-size:13px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:.2s;white-space:nowrap;flex-shrink:0}
+.nav-tab:hover{color:var(--text2)}
+.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.main{padding:14px;max-width:1100px;margin:0 auto}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:14px}
+.card-title{font-size:11px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px}
+.stock-item{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:12px 14px;cursor:pointer;transition:.15s;border-left:3px solid transparent}
+.stock-item:hover{border-color:var(--border2)}
+.stock-item.sel{border-left-color:var(--accent)}
+.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700}
+.badge-up{background:rgba(240,64,64,.15);color:var(--up)}
+.badge-down{background:rgba(41,121,255,.15);color:var(--down)}
+input,select{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);padding:9px 11px;font-size:13px;font-family:var(--font);outline:none;width:100%}
+input:focus,select:focus{border-color:var(--accent)}
+label{font-size:12px;color:var(--text3);margin-bottom:3px;display:block}
+.btn{border:1px solid var(--border2);background:transparent;color:var(--text2);border-radius:var(--r);padding:7px 13px;font-size:13px;cursor:pointer;font-family:var(--font);transition:.15s;display:inline-flex;align-items:center;gap:5px}
+.btn:hover{background:var(--bg3);color:var(--text)}
+.btn-buy{background:rgba(240,64,64,.15);border-color:var(--up);color:var(--up);font-weight:700;width:100%;justify-content:center;padding:11px;font-size:14px}
+.btn-buy:hover{background:rgba(240,64,64,.25)}
+.btn-sell{background:rgba(41,121,255,.15);border-color:var(--down);color:var(--down);font-weight:700;width:100%;justify-content:center;padding:11px;font-size:14px}
+.btn-sell:hover{background:rgba(41,121,255,.25)}
+.trade-tabs{display:flex;margin-bottom:12px}
+.trade-tab{flex:1;padding:8px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border2);transition:.15s}
+.trade-tab:first-child{border-radius:var(--r) 0 0 var(--r)}
+.trade-tab:last-child{border-radius:0 var(--r) var(--r) 0}
+.ttab-buy{background:rgba(240,64,64,.15);border-color:var(--up);color:var(--up)}
+.ttab-sell{background:rgba(41,121,255,.15);border-color:var(--down);color:var(--down)}
+.pitem{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:12px 14px;margin-bottom:7px;border-left:3px solid transparent}
+.rank-item{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:11px 14px;margin-bottom:7px;display:flex;align-items:center;gap:10px}
+#mg-screen{position:fixed;inset:0;background:rgba(10,14,26,.97);z-index:800;display:none;flex-direction:column;align-items:center;justify-content:center}
+#mg-screen.show{display:flex}
+#broadcast-overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:900;display:none;align-items:center;justify-content:center}
+#broadcast-overlay.show{display:flex}
+.bc-box{background:var(--bg2);border:2px solid var(--up);border-radius:14px;padding:30px;max-width:420px;width:90%;text-align:center;animation:pop .3s ease}
+@keyframes pop{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+#toast-container{position:fixed;bottom:20px;right:14px;z-index:999;display:flex;flex-direction:column;gap:7px;align-items:flex-end;pointer-events:none}
+.toast{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);padding:9px 13px;font-size:13px;color:var(--text);max-width:270px;animation:tin .25s ease}
+.toast.success{border-left:3px solid var(--green)}
+.toast.danger{border-left:3px solid var(--red)}
+.toast.info{border-left:3px solid var(--accent)}
+@keyframes tin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+table{width:100%;border-collapse:collapse}
+th{font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.7px;text-transform:uppercase;padding:7px 10px;border-bottom:1px solid var(--border);text-align:left}
+td{padding:9px 10px;border-bottom:1px solid var(--border);font-size:13px}
+tr:hover td{background:var(--bg3)}
+@media(max-width:640px){.market-grid{grid-template-columns:1fr !important}}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">◈</div>
+    <h1>주식투자 게임</h1>
+    <p><span class="conn-dot" id="cdot"></span><span id="cstatus">서버 연결 중...</span></p>
+    <input type="text" id="lc" placeholder="팀 코드" style="text-transform:uppercase" onkeydown="if(event.key==='Enter')doLogin()">
+    <input type="password" id="lp" placeholder="비밀번호" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn-primary" onclick="doLogin()">입장</button>
+    <div class="login-err" id="lerr"></div>
+  </div>
+</div>
+
+<div id="broadcast-overlay">
+  <div class="bc-box">
+    <div style="font-size:26px;margin-bottom:8px">📣</div>
+    <h2 style="font-size:18px;font-weight:700;margin-bottom:8px" id="bc-ttl"></h2>
+    <p style="font-size:14px;color:var(--text2);margin-bottom:18px" id="bc-bdy"></p>
+    <button class="btn-primary" onclick="document.getElementById('broadcast-overlay').classList.remove('show')">확인</button>
+  </div>
+</div>
+
+<div id="mg-screen">
+  <div id="mg-content" style="width:90%;max-width:480px;text-align:center"></div>
+</div>
+
+<div id="app" style="display:none">
+  <div class="freeze-bar" id="freeze-bar">🔒 거래가 동결되어 있습니다. 관리자 지시를 기다리세요.</div>
+  <div class="news-ticker"><div class="ticker-inner" id="ticker">
+    <span class="ticker-item"><b>◈</b> 주식투자 게임에 오신 것을 환영합니다!</span>
+  </div></div>
+  <div class="topbar">
+    <span class="topbar-logo">◈</span>
+    <div class="team-badge" id="team-name-badge">팀</div>
+    <div id="cash-top" style="font-family:var(--font-mono);font-size:13px;font-weight:700"></div>
+    <div class="topbar-right">
+      <div class="round-badge" id="rbadge">R1/5</div>
+      <div class="timer" id="timer-top">--:--</div>
+    </div>
+  </div>
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="switchTab('market')">시장</div>
+    <div class="nav-tab" onclick="switchTab('portfolio')">포트폴리오</div>
+    <div class="nav-tab" onclick="switchTab('ranking')">랭킹</div>
+    <div class="nav-tab" onclick="switchTab('history')">거래내역</div>
+  </div>
+  <div class="main" id="content"></div>
+</div>
+<div id="toast-container"></div>
+
+<script>
+const STOCKS=[
+  {id:'khfood',name:'김해푸드',color:'#22c55e',startPrice:30000,type:'안정 성장주'},
+  {id:'miratech',name:'미래테크',color:'#3b82f6',startPrice:50000,type:'고위험 성장주'},
+  {id:'issuegames',name:'이슈게임즈',color:'#f97316',startPrice:20000,type:'뉴스 연동주'},
+  {id:'bubblecoin',name:'버블코인',color:'#a855f7',startPrice:10000,type:'초고위험 코인주'},
+];
+let ws,state={},myTeamId=null,currentTab='market',selStock=STOCKS[0],tradeMode='buy';
+let timerLeft=300,timerRunning=false,localLeft=0,localInterval=null;
+let lastBcTs=0,prevMgActive=false;
+
+function connectWS(){
+  const proto=location.protocol==='https:'?'wss':'ws';
+  ws=new WebSocket(`${proto}://${location.host}`);
+  ws.onopen=()=>{document.getElementById('cdot').classList.add('ok');document.getElementById('cstatus').textContent='서버 연결됨';};
+  ws.onclose=()=>{document.getElementById('cdot').classList.remove('ok');document.getElementById('cstatus').textContent='재연결 중...';setTimeout(connectWS,2000);};
+  ws.onmessage=(e)=>{
+    const msg=JSON.parse(e.data);
+    if(msg.type==='AUTH_OK'&&msg.role==='player'){
+      myTeamId=msg.teamId;
+      document.getElementById('login-screen').style.display='none';
+      document.getElementById('app').style.display='block';
+      renderTab(currentTab);
+    }
+    if(msg.type==='AUTH_FAIL'){document.getElementById('lerr').textContent=msg.msg;}
+    if(msg.type==='STATE'){
+      const prev=state;state=msg.state;
+      updateTopbar();checkBroadcast();checkMinigame();updateTicker();checkPriceAlerts(prev);
+      if(document.getElementById('content'))renderTab(currentTab);
+    }
+    if(msg.type==='TIMER'){timerLeft=msg.left;timerRunning=msg.running;if(timerRunning)startLocalTimer();else{clearInterval(localInterval);updateTimerDisp();}}
+    if(msg.type==='TRADE_OK'){toast(`${msg.mode==='buy'?'매수':'매도'} 완료 · ${msg.qty}주 · ${msg.total.toLocaleString()}원`,msg.mode==='buy'?'success':'info');}
+    if(msg.type==='MG_RESULT'){msg.correct?toast(`✅ 정답! +${msg.reward.toLocaleString()}원`,'success'):toast('❌ 오답!','danger');}
+    if(msg.type==='PREDICT_SAVED'){toast('예측 제출 완료','info');}
+    if(msg.type==='ERROR'){toast(msg.msg,'danger');}
+    if(msg.type==='ROUND_END'){toast(`라운드 ${state.round-1} 종료!`,'info');}
+    if(msg.type==='GAME_OVER'){toast('🏆 게임 종료!','success');}
+  };
+}
+connectWS();
+
+function send(obj){if(ws&&ws.readyState===1)ws.send(JSON.stringify(obj));}
+function doLogin(){send({type:'PLAYER_LOGIN',code:document.getElementById('lc').value.trim(),pw:document.getElementById('lp').value.trim()});}
+
+function startLocalTimer(){
+  clearInterval(localInterval);localLeft=timerLeft;const started=Date.now();
+  localInterval=setInterval(()=>{localLeft=Math.max(0,timerLeft-Math.floor((Date.now()-started)/1000));updateTimerDisp(localLeft);},500);
+}
+function updateTimerDisp(s){
+  const v=s!==undefined?s:(timerRunning?localLeft:timerLeft);
+  const m=Math.floor(v/60),ss=v%60;
+  const el=document.getElementById('timer-top');
+  if(el){el.textContent=timerRunning?`${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`:'--:--';el.className='timer'+(v<=30&&timerRunning?' warn':'');}
+}
+setInterval(()=>updateTimerDisp(),500);
+
+function updateTopbar(){
+  if(!state||!myTeamId)return;
+  const t=state.teams?.[myTeamId];if(!t)return;
+  document.getElementById('team-name-badge').textContent=t.name;
+  document.getElementById('cash-top').innerHTML=`💵 ${t.cash.toLocaleString()}원`;
+  document.getElementById('rbadge').textContent=`R${state.round||1}/${state.maxRound||5}`;
+  const fb=document.getElementById('freeze-bar');if(fb)fb.className='freeze-bar'+(state.freeze?' show':'');
+  timerLeft=state.timerLeft||300;timerRunning=state.timerRunning||false;
+  if(timerRunning)startLocalTimer();else{clearInterval(localInterval);updateTimerDisp();}
+}
+
+function updateTicker(){
+  const news=state.news||[];if(!news.length)return;
+  const html=news.slice(0,5).map(n=>`<span class="ticker-item"><b>◈</b> ${n.title}${n.desc?' — '+n.desc:''}</span>`).join('');
+  document.getElementById('ticker').innerHTML=html+html;
+}
+
+function checkBroadcast(){
+  if(!state.broadcast)return;
+  if(state.broadcast.ts===lastBcTs)return;
+  lastBcTs=state.broadcast.ts;
+  document.getElementById('bc-ttl').textContent=state.broadcast.title;
+  document.getElementById('bc-bdy').textContent=state.broadcast.body||'';
+  document.getElementById('broadcast-overlay').classList.add('show');
+}
+
+function checkMinigame(){
+  const mg=state.minigame;
+  if(mg?.active&&!prevMgActive)showMg(mg);
+  if(!mg?.active&&prevMgActive)document.getElementById('mg-screen').classList.remove('show');
+  prevMgActive=mg?.active||false;
+}
+
+let prevPrices={};
+function checkPriceAlerts(prev){
+  if(!myTeamId)return;
+  const t=state.teams?.[myTeamId];if(!t)return;
+  STOCKS.forEach(s=>{
+    const cur=state.prices?.[s.id];const old=(prev.prices||{})[s.id];
+    if(old&&cur&&cur!==old){
+      const qty=(t.holdings||{})[s.id]||0;
+      if(qty>0){const diff=cur-old;const pct=((diff/old)*100).toFixed(1);const gain=diff*qty;
+        toast(`${s.name} ${diff>0?'▲':'▼'}${Math.abs(pct)}% | ${diff>0?'+':''}${gain.toLocaleString()}원 (${qty}주)`,diff>0?'success':'danger');}
+    }
+  });
+}
+
+// ─────────────────────────────────────────
+// TABS
+// ─────────────────────────────────────────
+function switchTab(tab){
+  currentTab=tab;
+  document.querySelectorAll('.nav-tab').forEach((t,i)=>{const ts=['market','portfolio','ranking','history'];t.classList.toggle('active',ts[i]===tab);});
+  renderTab(tab);
+}
+function renderTab(tab){
+  const el=document.getElementById('content');if(!el||!state||!myTeamId)return;
+  if(tab==='market')el.innerHTML=marketHTML();
+  else if(tab==='portfolio')el.innerHTML=portfolioHTML();
+  else if(tab==='ranking')el.innerHTML=rankingHTML();
+  else if(tab==='history')el.innerHTML=historyHTML();
+}
+
+// ─────────────────────────────────────────
+// MARKET
+// ─────────────────────────────────────────
+function marketHTML(){
+  const t=state.teams?.[myTeamId];if(!t)return '';
+  const frozen=state.freeze;
+  const list=STOCKS.map(s=>{
+    const p=state.prices?.[s.id]||s.startPrice;
+    const hist=(state.priceHistory?.[s.id])||[p];
+    const prev=hist.length>1?hist[hist.length-2]:s.startPrice;
+    const chg=p-prev;const pct=((chg/prev)*100).toFixed(2);const up=chg>=0;
+    return `<div class="stock-item${selStock.id===s.id?' sel':''}" onclick="selStock=STOCKS.find(x=>x.id==='${s.id}');renderTab('market')" style="${selStock.id===s.id?'border-left-color:'+s.color:''}">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><div style="font-weight:700;font-size:13px;color:${s.color}">${s.name}</div><div style="font-size:10px;color:var(--text3)">${s.type}</div></div>
+        <div style="text-align:right">
+          <div style="font-family:var(--font-mono);font-size:17px;font-weight:700;color:${up?'var(--up)':'var(--down)'}">${p.toLocaleString()}</div>
+          <div style="font-family:var(--font-mono);font-size:11px;color:${up?'var(--up)':'var(--down)'}">${up?'▲':'▼'} ${Math.abs(pct)}%</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const st=selStock;const price=state.prices?.[st.id]||st.startPrice;
+  const hist=(state.priceHistory?.[st.id])||[price];
+  const prev2=hist.length>1?hist[hist.length-2]:st.startPrice;
+  const chg2=price-prev2;const pct2=((chg2/prev2)*100).toFixed(2);const up2=chg2>=0;
+  const holding=(t.holdings||{})[st.id]||0;
+
+  // SVG chart
+  const pts=hist.slice(-30);const W=480,H=130,pad=8;
+  const minV=Math.min(...pts);const maxV=Math.max(...pts);const rng=maxV-minV||1;
+  let path='';
+  if(pts.length>1){
+    const xs=pts.map((_,i)=>pad+i*(W-pad*2)/(pts.length-1));
+    const ys=pts.map(v=>H-pad-((v-minV)/rng)*(H-pad*2));
+    path=`M${xs.map((x,i)=>`${x},${ys[i]}`).join(' L')}`;
+  }
+
+  const tradePanel=frozen?
+    `<div style="text-align:center;padding:20px;color:var(--blue)">🔒 거래 동결 중</div>`:
+    `<div class="trade-tabs">
+      <div class="trade-tab ${tradeMode==='buy'?'ttab-buy':''}" onclick="tradeMode='buy';renderTab('market')">매수</div>
+      <div class="trade-tab ${tradeMode==='sell'?'ttab-sell':''}" onclick="tradeMode='sell';renderTab('market')">매도</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3);margin-bottom:8px">
+      <span>현금: <b style="font-family:var(--font-mono)">${t.cash.toLocaleString()}원</b></span>
+      <span>보유: <b style="font-family:var(--font-mono)">${holding}주</b></span>
+    </div>
+    <div style="margin-bottom:8px"><label>수량</label><input type="number" id="qty-input" value="1" min="1" oninput="updateTotal()"></div>
+    <div style="background:var(--bg3);border-radius:var(--r);padding:9px 11px;margin-bottom:9px;font-size:13px;display:flex;justify-content:space-between">
+      <span style="color:var(--text3)">주문금액</span><span id="trade-total" style="font-family:var(--font-mono)">${price.toLocaleString()}원</span>
+    </div>
+    <div style="display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap">
+      <button class="btn" style="font-size:11px;padding:4px 8px" onclick="setQPct(25)">25%</button>
+      <button class="btn" style="font-size:11px;padding:4px 8px" onclick="setQPct(50)">50%</button>
+      <button class="btn" style="font-size:11px;padding:4px 8px" onclick="setQPct(75)">75%</button>
+      <button class="btn" style="font-size:11px;padding:4px 8px" onclick="setQPct(100)">전체</button>
+    </div>
+    <button class="${tradeMode==='buy'?'btn-buy':'btn-sell'}" onclick="executeTrade()">${tradeMode==='buy'?'▲ 매수':'▼ 매도'}</button>`;
+
+  return `<div style="display:grid;grid-template-columns:180px 1fr;gap:12px;align-items:start" class="market-grid">
+    <div style="display:flex;flex-direction:column;gap:7px">${list}</div>
+    <div style="display:flex;flex-direction:column;gap:11px">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div><span style="font-size:15px;font-weight:700;color:${st.color}">${st.name}</span>
+            <span style="font-family:var(--font-mono);font-size:20px;font-weight:700;color:${up2?'var(--up)':'var(--down)'};margin-left:10px">${price.toLocaleString()}원</span></div>
+          <span style="font-family:var(--font-mono);font-size:12px;color:${up2?'var(--up)':'var(--down)'}">${up2?'▲':'▼'} ${Math.abs(pct2)}%</span>
+        </div>
+        <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:110px" preserveAspectRatio="none">
+          ${pts.length>1?`<defs><linearGradient id="g${st.id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${st.color}" stop-opacity="0.25"/><stop offset="100%" stop-color="${st.color}" stop-opacity="0"/></linearGradient></defs>
+          <path d="${path} L${W-pad},${H-pad} L${pad},${H-pad} Z" fill="url(#g${st.id})"/>
+          <path d="${path}" fill="none" stroke="${st.color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="${pad+(pts.length-1)*(W-pad*2)/(pts.length-1)}" cy="${H-pad-((pts[pts.length-1]-minV)/rng)*(H-pad*2)}" r="3.5" fill="${st.color}"/>`
+          :`<text x="${W/2}" y="${H/2}" text-anchor="middle" fill="#64748b" font-size="11" font-family="monospace">데이터 수집 중...</text>`}
+        </svg>
+        <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10px;color:var(--text3);margin-top:3px">
+          <span>최저 ${minV.toLocaleString()}</span><span>최고 ${maxV.toLocaleString()}</span>
+        </div>
+      </div>
+      <div class="card">${tradePanel}</div>
+    </div>
+  </div>`;
+}
+
+function updateTotal(){
+  const qty=parseInt(document.getElementById('qty-input')?.value)||1;
+  const p=state.prices?.[selStock.id]||0;
+  const el=document.getElementById('trade-total');
+  if(el)el.textContent=(p*qty).toLocaleString()+'원';
+}
+function setQPct(pct){
+  const t=state.teams?.[myTeamId];if(!t)return;
+  const p=state.prices?.[selStock.id]||1;
+  let qty=tradeMode==='buy'?Math.floor((t.cash*(pct/100))/p):Math.floor(((t.holdings||{})[selStock.id]||0)*(pct/100));
+  const el=document.getElementById('qty-input');if(el){el.value=Math.max(1,qty);updateTotal();}
+}
+function executeTrade(){
+  if(state.freeze){toast('거래 동결 중','danger');return;}
+  const qty=parseInt(document.getElementById('qty-input')?.value)||0;
+  if(qty<=0){toast('수량 입력','danger');return;}
+  send({type:'TRADE',mode:tradeMode,stockId:selStock.id,qty});
+}
+
+// ─────────────────────────────────────────
+// PORTFOLIO
+// ─────────────────────────────────────────
+function portfolioHTML(){
+  const t=state.teams?.[myTeamId];if(!t)return '';
+  const h=Object.entries(t.holdings||{});
+  const asset=calcAsset(t);const profit=asset-1000000;
+  const items=h.length?h.map(([id,qty])=>{
+    const s=STOCKS.find(x=>x.id===id);if(!s)return '';
+    const p=state.prices?.[id]||0;const avg=(t.buyAvg||{})[id]||p;
+    const val=p*qty;const cost=avg*qty;const d=val-cost;const up=d>=0;const dp=((d/cost)*100).toFixed(2);
+    return `<div class="pitem" style="border-left-color:${s.color}">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><div style="font-weight:700;color:${s.color}">${s.name}</div><div style="font-size:11px;color:var(--text3)">${qty}주 · 평균 ${Math.round(avg).toLocaleString()}원</div></div>
+        <div style="text-align:right">
+          <div style="font-family:var(--font-mono);font-weight:700;color:${up?'var(--up)':'var(--down)'}">${val.toLocaleString()}원</div>
+          <div style="font-size:11px;font-family:var(--font-mono);color:${up?'var(--up)':'var(--down)'}">${up?'+':''}${d.toLocaleString()}원 (${dp}%)</div>
+        </div>
+      </div>
+    </div>`;
+  }).join(''):`<p style="color:var(--text3);padding:12px 0;font-size:13px">보유 종목 없음</p>`;
+
+  return `<div class="card" style="margin-bottom:11px">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      ${[['총 자산',asset.toLocaleString(),'var(--text)'],['보유 현금',t.cash.toLocaleString(),'var(--text)'],['손익',(profit>=0?'+':'')+profit.toLocaleString(),profit>=0?'var(--up)':'var(--down)']].map(([l,v,c])=>`
+      <div style="background:var(--bg3);border-radius:var(--r);padding:11px">
+        <div style="font-size:11px;color:var(--text3)">${l}</div>
+        <div style="font-family:var(--font-mono);font-size:17px;font-weight:700;color:${c};margin-top:3px">${v}</div>
+      </div>`).join('')}
+    </div>
+  </div>
+  <div class="card"><div class="card-title">보유 종목</div>${items}</div>`;
+}
+
+// ─────────────────────────────────────────
+// RANKING
+// ─────────────────────────────────────────
+function rankingHTML(){
+  const my=state.teams?.[myTeamId];if(!my)return '';
+  const sorted=Object.values(state.teams||{}).sort((a,b)=>calcAsset(b)-calcAsset(a));
+  const medals=['🥇','🥈','🥉'];
+  const myRank=sorted.findIndex(t=>t.id===myTeamId)+1;
+  const myA=calcAsset(my);
+  const items=sorted.map((t,i)=>{
+    const a=calcAsset(t);const isMe=t.id===myTeamId;
+    const hs=STOCKS.filter(s=>(t.holdings||{})[s.id]>0).map(s=>`<span style="font-size:10px;background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:3px;padding:1px 5px;color:var(--text3)">${s.name}</span>`).join(' ');
+    return `<div class="rank-item" style="${isMe?'border-color:var(--accent);background:rgba(56,189,248,.04)':''}">
+      <div style="font-family:var(--font-mono);font-size:18px;font-weight:700;min-width:26px;color:${medals[i]?'':'var(--text3)'}">${medals[i]||i+1}</div>
+      <div style="flex:1"><div style="font-weight:600${isMe?';color:var(--accent)':''}">${t.name}${isMe?' 👈':''}</div>
+        <div style="display:flex;gap:3px;margin-top:3px;flex-wrap:wrap">${hs||'<span style="font-size:10px;color:var(--text3)">없음</span>'}</div></div>
+      <div style="text-align:right">
+        <div style="font-family:var(--font-mono);font-weight:700">${a.toLocaleString()}원</div>
+        <div style="font-size:11px;color:${a>=1000000?'var(--up)':'var(--down)'}">${a>=1000000?'+':''}{${((a-1000000)/10000).toFixed(1)}만원</div>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="card" style="margin-bottom:11px">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      ${[['내 순위',myRank+'위','var(--accent)'],['내 총자산',myA.toLocaleString(),'var(--text)'],['1위와 차이',(calcAsset(sorted[0])-myA).toLocaleString(),'var(--down)']].map(([l,v,c])=>`
+      <div style="background:var(--bg3);border-radius:var(--r);padding:11px">
+        <div style="font-size:11px;color:var(--text3)">${l}</div>
+        <div style="font-family:var(--font-mono);font-size:17px;font-weight:700;color:${c};margin-top:3px">${v}</div>
+      </div>`).join('')}
+    </div>
+  </div>
+  <div class="card"><div class="card-title">전체 랭킹</div>${items}</div>`;
+}
+
+// ─────────────────────────────────────────
+// HISTORY
+// ─────────────────────────────────────────
+function historyHTML(){
+  const t=state.teams?.[myTeamId];if(!t)return '';
+  const logs=[...((t.tradeLog)||[])].reverse();
+  if(!logs.length)return '<div class="card"><p style="color:var(--text3);font-size:13px">거래 내역 없음</p></div>';
+  return `<div class="card"><div class="card-title">거래 내역</div>
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th>시간</th><th>유형</th><th>종목</th><th>수량</th><th>단가</th><th>금액</th><th>R</th></tr></thead>
+      <tbody>${logs.map(l=>{
+        const s=STOCKS.find(x=>x.id===l.stock);const buy=l.type==='buy';
+        return `<tr>
+          <td style="font-family:var(--font-mono);font-size:11px;color:var(--text3)">${new Date(l.ts).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</td>
+          <td><span class="badge ${buy?'badge-up':'badge-down'}">${buy?'매수':'매도'}</span></td>
+          <td style="color:${s?.color||'var(--text)'}">${l.name}</td>
+          <td style="font-family:var(--font-mono)">${l.qty}주</td>
+          <td style="font-family:var(--font-mono)">${l.price.toLocaleString()}</td>
+          <td style="font-family:var(--font-mono);color:${buy?'var(--down)':'var(--up)'}">${buy?'-':'+'}${l.total.toLocaleString()}</td>
+          <td style="color:var(--text3)">R${l.round}</td>
+        </tr>`;}).join('')}
+      </tbody>
+    </table></div>
+  </div>`;
+}
+
+// ─────────────────────────────────────────
+// MINI GAME
+// ─────────────────────────────────────────
+function showMg(mg){
+  let html='';
+  if(mg.type==='ox'){
+    html=`<div style="background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:36px">
+      <div style="font-size:12px;color:var(--text3);letter-spacing:2px;margin-bottom:10px">🎮 OX 퀴즈</div>
+      <h2 style="font-size:18px;font-weight:700;margin-bottom:28px;line-height:1.5">${mg.question||'문제 없음'}</h2>
+      <div style="display:flex;gap:14px;justify-content:center">
+        <button onclick="send({type:'SUBMIT_OX',answer:'O'})" style="width:100px;height:100px;border-radius:50%;background:rgba(240,64,64,.15);border:2px solid var(--up);color:var(--up);font-size:44px;cursor:pointer">○</button>
+        <button onclick="send({type:'SUBMIT_OX',answer:'X'})" style="width:100px;height:100px;border-radius:50%;background:rgba(41,121,255,.15);border:2px solid var(--down);color:var(--down);font-size:44px;cursor:pointer">✕</button>
+      </div>
+    </div>`;
+  } else if(mg.type==='roulette'){
+    html=`<div style="background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:36px;text-align:center">
+      <div style="font-size:12px;color:var(--text3);letter-spacing:2px;margin-bottom:10px">🎰 룰렛</div>
+      <div style="font-size:72px;margin:18px 0;animation:spin 1.5s ease-in-out infinite">🎰</div>
+      <p style="color:var(--text2)">관리자가 룰렛을 돌리는 중...</p>
+      <style>@keyframes spin{0%{transform:rotate(0)}50%{transform:rotate(540deg)}100%{transform:rotate(720deg)}}</style>
+    </div>`;
+  } else if(mg.type==='predict'){
+    const s=STOCKS.find(x=>x.id===mg.stock);
+    html=`<div style="background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:36px">
+      <div style="font-size:12px;color:var(--text3);letter-spacing:2px;margin-bottom:10px">📊 주가 예측</div>
+      <h2 style="font-size:17px;font-weight:700;margin-bottom:8px">${s?.name||'종목'} 다음 주가 예측</h2>
+      <p style="color:var(--text2);font-size:13px;margin-bottom:24px">보상: <b style="color:var(--accent)">${mg.reward?.toLocaleString()}원</b></p>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button onclick="send({type:'SUBMIT_PREDICT',direction:'up'})" style="padding:14px 28px;background:rgba(240,64,64,.15);border:2px solid var(--up);color:var(--up);border-radius:var(--r2);font-size:15px;font-weight:700;cursor:pointer">▲ 상승</button>
+        <button onclick="send({type:'SUBMIT_PREDICT',direction:'down'})" style="padding:14px 28px;background:rgba(41,121,255,.15);border:2px solid var(--down);color:var(--down);border-radius:var(--r2);font-size:15px;font-weight:700;cursor:pointer">▼ 하락</button>
+      </div>
+    </div>`;
+  }
+  document.getElementById('mg-content').innerHTML=html;
+  document.getElementById('mg-screen').classList.add('show');
+}
+
+// ─────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────
+function calcAsset(team){
+  let total=team.cash||0;
+  Object.entries(team.holdings||{}).forEach(([id,qty])=>{total+=(state.prices?.[id]||0)*qty;});
+  return total;
+}
+function toast(msg,type='info'){
+  const el=document.createElement('div');el.className=`toast ${type}`;el.textContent=msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(()=>el.remove(),3000);
+}
+</script>
+</body>
+</html>
 
