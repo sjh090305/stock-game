@@ -347,6 +347,19 @@ wss.on('connection', (ws) => {
         broadcastState();
         break;
       }
+      case 'DELETE_LOG': {
+  if(gameState.eventLog && gameState.eventLog[msg.index] !== undefined){
+    gameState.eventLog.splice(msg.index, 1);
+    broadcastState();
+  }
+  break;
+}
+
+case 'CLEAR_LOGS': {
+  gameState.eventLog = [];
+  broadcastState();
+  break;
+}
 
       case 'RESET': {
         clearInterval(timerInterval);
