@@ -1,1 +1,747 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>관리자 콘솔 — 주식투자 게임</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0e1a;--bg2:#0f1525;--bg3:#151d2e;--bg4:#1a2338;
+  --border:#1e2d45;--border2:#253550;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
+  --red:#ef4444;--blue:#3b82f6;--green:#22c55e;
+  --up:#f04040;--down:#2979ff;
+  --accent:#38bdf8;--accent2:#0284c7;
+  --khfood:#22c55e;--miratech:#3b82f6;--issuegames:#f97316;--bubblecoin:#a855f7;
+  --font-mono:'JetBrains Mono',monospace;--font:'Noto Sans KR',sans-serif;
+  --r:6px;--r2:10px;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;min-height:100vh}
+#login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:1000}
+.login-box{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:48px 40px;width:360px;text-align:center}
+.login-box h1{font-size:20px;font-weight:700;margin-bottom:6px}
+.login-box p{color:var(--text3);font-size:13px;margin-bottom:28px}
+.login-logo{font-family:var(--font-mono);font-size:32px;font-weight:700;color:var(--accent);margin-bottom:8px;letter-spacing:-2px}
+.login-box input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);padding:12px 14px;font-family:var(--font-mono);font-size:14px;outline:none;margin-bottom:10px}
+.login-box input:focus{border-color:var(--accent)}
+.btn-primary{width:100%;background:var(--accent2);border:none;border-radius:var(--r);color:#fff;padding:12px;font-size:14px;font-weight:700;cursor:pointer;transition:background .2s}
+.btn-primary:hover{background:var(--accent)}
+.login-err{color:var(--red);font-size:13px;margin-top:8px}
+.conn-dot{width:8px;height:8px;border-radius:50%;background:var(--red);display:inline-block;margin-right:6px;transition:background .3s}
+.conn-dot.ok{background:var(--green)}
+#app{display:none;min-height:100vh}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);height:56px;display:flex;align-items:center;padding:0 20px;gap:12px;position:sticky;top:0;z-index:100}
+.topbar-logo{font-family:var(--font-mono);font-weight:700;font-size:16px;color:var(--accent);letter-spacing:-1px}
+.topbar-badge{background:#7f1d1d;color:#fca5a5;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:1px}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.round-display{font-family:var(--font-mono);font-size:13px;color:var(--text2)}
+.round-display span{color:var(--accent);font-weight:700}
+.timer-display{font-family:var(--font-mono);font-size:18px;font-weight:700;min-width:64px;text-align:center}
+.timer-display.warning{color:var(--up);animation:blink .8s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+.nav-tabs{display:flex;gap:2px;padding:0 20px;background:var(--bg2);border-bottom:1px solid var(--border);overflow-x:auto}
+.nav-tab{padding:10px 16px;font-size:13px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;flex-shrink:0}
+.nav-tab:hover{color:var(--text2)}
+.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.main{padding:20px;max-width:1400px;margin:0 auto}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:18px}
+.card-title{font-size:11px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.btn{border:1px solid var(--border2);background:transparent;color:var(--text2);border-radius:var(--r);padding:8px 14px;font-size:13px;cursor:pointer;font-family:var(--font);transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:var(--bg3);color:var(--text)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-danger{border-color:#7f1d1d;color:var(--red);background:rgba(239,68,68,.05)}
+.btn-danger:hover{background:rgba(239,68,68,.15)}
+.btn-success{border-color:#14532d;color:var(--green);background:rgba(34,197,94,.05)}
+.btn-success:hover{background:rgba(34,197,94,.15)}
+.btn-blue{border-color:#1e3a5f;color:var(--blue);background:rgba(59,130,246,.05)}
+.btn-blue:hover{background:rgba(59,130,246,.15)}
+.btn-accent{background:var(--accent2);border-color:var(--accent2);color:#fff;font-weight:600}
+.btn-accent:hover{background:var(--accent)}
+.btn-up{background:rgba(240,64,64,.15);border-color:var(--up);color:var(--up);font-weight:700}
+.btn-down{background:rgba(41,121,255,.15);border-color:var(--down);color:var(--down);font-weight:700}
+input,select,textarea{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+label{font-size:12px;color:var(--text3);margin-bottom:4px;display:block}
+.form-row{display:grid;gap:10px;margin-bottom:10px}
+.form-row.c2{grid-template-columns:1fr 1fr}
+.form-row.c3{grid-template-columns:1fr 1fr 1fr}
+table{width:100%;border-collapse:collapse}
+th{font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.8px;text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);text-align:left}
+td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px}
+tr:hover td{background:var(--bg3)}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700}
+.badge-up{background:rgba(240,64,64,.15);color:var(--up)}
+.badge-down{background:rgba(41,121,255,.15);color:var(--down)}
+.stock-tile{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:14px;position:relative;overflow:hidden}
+.stock-tile .bar{position:absolute;top:0;left:0;width:3px;height:100%;border-radius:4px 0 0 4px}
+.tag{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:all .2s;user-select:none}
+.tag-khfood{border-color:rgba(34,197,94,.4);color:var(--khfood)}
+.tag-miratech{border-color:rgba(59,130,246,.4);color:var(--miratech)}
+.tag-issuegames{border-color:rgba(249,115,22,.4);color:var(--issuegames)}
+.tag-bubblecoin{border-color:rgba(168,85,247,.4);color:var(--bubblecoin)}
+.sel-khfood{background:rgba(34,197,94,.15)}
+.sel-miratech{background:rgba(59,130,246,.15)}
+.sel-issuegames{background:rgba(249,115,22,.15)}
+.sel-bubblecoin{background:rgba(168,85,247,.15)}
+.sdiv{border:none;border-top:1px solid var(--border);margin:14px 0}
+.rank-bar-wrap{margin-bottom:10px}
+.rank-bar-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px}
+.rank-bar{height:7px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.rank-bar-fill{height:100%;border-radius:4px;transition:width .5s}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:none;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:28px;min-width:360px;max-width:480px;width:90%}
+.modal h3{font-size:16px;font-weight:700;margin-bottom:6px}
+.modal p{font-size:13px;color:var(--text2);margin-bottom:20px}
+.modal-btns{display:flex;gap:10px;justify-content:flex-end}
+.mg-option{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:14px;cursor:pointer;transition:all .2s;text-align:center}
+.mg-option:hover,.mg-option.sel{border-color:var(--accent);background:rgba(56,189,248,.05)}
+.mg-option .ico{font-size:28px;margin-bottom:6px}
+.mg-option .nm{font-size:13px;font-weight:600;margin-bottom:3px}
+.mg-option .ds{font-size:11px;color:var(--text3)}
+#result-screen{position:fixed;inset:0;background:rgba(10,14,26,.96);z-index:800;display:none;flex-direction:column;align-items:center;justify-content:center}
+#result-screen.show{display:flex}
+.podium{display:flex;align-items:flex-end;gap:10px;margin:32px 0 20px}
+.pcol{display:flex;flex-direction:column;align-items:center;gap:6px}
+.pblock{width:110px;background:var(--bg3);border:1px solid var(--border);border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;font-family:var(--font-mono)}
+.p1{height:130px;border-color:gold;color:gold}
+.p2{height:95px;border-color:silver;color:silver}
+.p3{height:75px;border-color:#cd7f32;color:#cd7f32}
+#toast-container{position:fixed;top:68px;right:20px;z-index:999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);padding:10px 14px;font-size:13px;color:var(--text);min-width:220px;pointer-events:all;animation:tin .3s ease;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.toast.success{border-left:3px solid var(--green)}
+.toast.danger{border-left:3px solid var(--red)}
+.toast.info{border-left:3px solid var(--accent)}
+@keyframes tin{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+@media(max-width:768px){.grid2,.grid3,.grid4{grid-template-columns:1fr}.main{padding:12px}.form-row.c2,.form-row.c3{grid-template-columns:1fr}}
+.freeze-bar{background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);padding:8px 16px;text-align:center;font-size:13px;color:var(--blue);display:none}
+.freeze-bar.show{display:block}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">◈ ADMIN</div>
+    <h1>관리자 콘솔</h1>
+    <p><span class="conn-dot" id="conn-dot"></span><span id="conn-status">서버 연결 중...</span></p>
+    <input type="password" id="admin-pw" placeholder="관리자 비밀번호" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn-primary" onclick="doLogin()">접속</button>
+    <div class="login-err" id="login-err"></div>
+    <p style="margin-top:14px;font-size:11px;color:var(--text3)">기본: <b style="color:var(--accent);font-family:var(--font-mono)">admin1234</b></p>
+  </div>
+</div>
+
+<div id="app">
+  <div class="freeze-bar" id="freeze-bar">🔒 거래 동결 중 — 플레이어 매매 불가</div>
+  <div class="topbar">
+    <span class="topbar-logo">◈ STOCK GAME</span>
+    <span class="topbar-badge">ADMIN</span>
+    <div class="topbar-right">
+      <span style="font-size:12px;color:var(--text3)"><span class="conn-dot ok" id="app-conn-dot"></span>연결됨</span>
+      <div class="round-display">ROUND <span id="top-round">1</span>/5</div>
+      <div class="timer-display" id="top-timer">--:--</div>
+      <button class="btn btn-sm" id="timer-btn" onclick="toggleTimer()">▶ 시작</button>
+      <button class="btn btn-sm btn-danger" onclick="showModal('reset-modal')">리셋</button>
+    </div>
+  </div>
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="switchTab('dashboard')">대시보드</div>
+    <div class="nav-tab" onclick="switchTab('teams')">팀 관리</div>
+    <div class="nav-tab" onclick="switchTab('stocks')">주가 조정</div>
+    <div class="nav-tab" onclick="switchTab('events')">이벤트</div>
+    <div class="nav-tab" onclick="switchTab('round')">라운드</div>
+    <div class="nav-tab" onclick="switchTab('minigame')">미니게임</div>
+    <div class="nav-tab" onclick="switchTab('stats')">통계</div>
+  </div>
+  <div class="main" id="main-content"></div>
+</div>
+
+<!-- Modals -->
+<div class="modal-overlay" id="reset-modal">
+  <div class="modal"><h3>⚠ 게임 전체 리셋</h3><p>모든 데이터가 초기화됩니다. 되돌릴 수 없습니다.</p>
+  <div class="modal-btns"><button class="btn" onclick="hideModal('reset-modal')">취소</button><button class="btn btn-danger" onclick="send({type:'RESET'});hideModal('reset-modal');toast('리셋 완료','info')">리셋 실행</button></div></div>
+</div>
+<div class="modal-overlay" id="money-modal">
+  <div class="modal"><h3>💰 자금 조정</h3><p id="money-team-label" style="color:var(--accent)"></p>
+  <div class="form-row c3">
+    <div><label>방식</label><select id="money-type"><option value="add">추가</option><option value="sub">차감</option><option value="set">고정</option></select></div>
+    <div><label>금액</label><input type="number" id="money-amount" value="100000"></div>
+    <div style="display:flex;align-items:flex-end"><button class="btn btn-accent" style="width:100%" onclick="applyMoney()">적용</button></div>
+  </div>
+  <div class="modal-btns"><button class="btn" onclick="hideModal('money-modal')">닫기</button></div></div>
+</div>
+<div class="modal-overlay" id="broadcast-modal">
+  <div class="modal"><h3>📣 전팀 공지</h3>
+  <div style="margin-bottom:14px">
+    <label>제목</label><input type="text" id="bc-title" placeholder="긴급 공지" style="margin-bottom:8px">
+    <label>내용</label><textarea id="bc-body" rows="3" style="resize:none"></textarea>
+  </div>
+  <div class="modal-btns"><button class="btn" onclick="hideModal('broadcast-modal')">취소</button><button class="btn btn-accent" onclick="doBroadcast()">발송</button></div></div>
+</div>
+<div class="modal-overlay" id="preset-modal">
+  <div class="modal"><h3>프리셋 저장</h3>
+  <div style="margin-bottom:14px"><label>이름</label><input type="text" id="preset-name" placeholder="예: 호황장"></div>
+  <div class="modal-btns"><button class="btn" onclick="hideModal('preset-modal')">취소</button><button class="btn btn-accent" onclick="savePreset()">저장</button></div></div>
+</div>
+
+<div id="result-screen">
+  <div style="text-align:center">
+    <div style="font-family:var(--font-mono);font-size:12px;color:var(--text3);letter-spacing:3px">FINAL RESULT</div>
+    <h1 style="font-size:34px;font-weight:700;margin-top:6px" id="result-winner"></h1>
+  </div>
+  <div class="podium" id="result-podium"></div>
+  <div id="result-list" style="width:90%;max-width:480px"></div>
+  <div style="margin-top:28px;display:flex;gap:10px">
+    <button class="btn btn-accent" onclick="document.getElementById('result-screen').classList.remove('show')">닫기</button>
+    <button class="btn btn-danger" onclick="showModal('reset-modal')">새 게임</button>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+// ─────────────────────────────────────────
+// WebSocket
+// ─────────────────────────────────────────
+const STOCKS=[
+  {id:'khfood',name:'김해푸드',color:'#22c55e',startPrice:30000,type:'안정 성장주'},
+  {id:'miratech',name:'미래테크',color:'#3b82f6',startPrice:50000,type:'고위험 성장주'},
+  {id:'issuegames',name:'이슈게임즈',color:'#f97316',startPrice:20000,type:'뉴스 연동주'},
+  {id:'bubblecoin',name:'버블코인',color:'#a855f7',startPrice:10000,type:'초고위험 코인주'},
+];
+let state={};let ws=null;let timerRunning=false;let timerLeft=300;let localTimerInterval=null;
+let currentTab='dashboard';let moneyTargetId=null;const evTags=new Set();let randomConfig={};
+
+function connectWS(){
+  const proto=location.protocol==='https:'?'wss':'ws';
+  ws=new WebSocket(`${proto}://${location.host}`);
+  ws.onopen=()=>{
+    document.getElementById('conn-dot').classList.add('ok');
+    document.getElementById('conn-status').textContent='서버 연결됨';
+  };
+  ws.onclose=()=>{
+    document.getElementById('conn-dot').classList.remove('ok');
+    document.getElementById('conn-status').textContent='연결 끊김 — 재시도 중...';
+    setTimeout(connectWS,2000);
+  };
+  ws.onmessage=(e)=>{
+    const msg=JSON.parse(e.data);
+    if(msg.type==='AUTH_OK'){
+      document.getElementById('login-screen').style.display='none';
+      document.getElementById('app').style.display='block';
+      renderTab(currentTab);
+    }
+    if(msg.type==='AUTH_FAIL'){document.getElementById('login-err').textContent=msg.msg;}
+    if(msg.type==='STATE'){
+      state=msg.state;
+      updateTopbar();
+      if(currentTab)renderTab(currentTab);
+    }
+    if(msg.type==='TIMER'){
+      timerLeft=msg.left;timerRunning=msg.running;
+      updateTimerDisplay();
+      if(timerRunning) startLocalTimer(); else clearInterval(localTimerInterval);
+    }
+    if(msg.type==='ROUND_END'){toast(`라운드 ${state.round-1} 종료 → 라운드 ${state.round}`,'info');}
+    if(msg.type==='GAME_OVER'){toast('🏆 게임 종료!','success');showResultScreen();}
+    if(msg.type==='ERROR'){toast(msg.msg,'danger');}
+  };
+}
+connectWS();
+
+function send(obj){if(ws&&ws.readyState===1)ws.send(JSON.stringify(obj));}
+
+// ─────────────────────────────────────────
+// AUTH
+// ─────────────────────────────────────────
+function doLogin(){send({type:'ADMIN_LOGIN',pw:document.getElementById('admin-pw').value});}
+
+// ─────────────────────────────────────────
+// TIMER (local interpolation)
+// ─────────────────────────────────────────
+let localLeft=0;
+function startLocalTimer(){
+  clearInterval(localTimerInterval);
+  localLeft=timerLeft;
+  const started=Date.now();
+  localTimerInterval=setInterval(()=>{
+    const elapsed=Math.floor((Date.now()-started)/1000);
+    localLeft=Math.max(0,timerLeft-elapsed);
+    updateTimerDisplay(localLeft);
+  },500);
+}
+function updateTimerDisplay(sec){
+  const s=sec!==undefined?sec:(timerRunning?localLeft:timerLeft);
+  const m=Math.floor(s/60);const ss=s%60;
+  const txt=`${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+  const el=document.getElementById('top-timer');
+  if(el){el.textContent=timerRunning?txt:'--:--';el.className='timer-display'+(s<=30&&timerRunning?' warning':'');}
+  document.getElementById('timer-btn').textContent=timerRunning?'⏸ 정지':'▶ 시작';
+}
+function toggleTimer(){send({type:timerRunning?'TIMER_PAUSE':'TIMER_START'});}
+
+function updateTopbar(){
+  if(!state)return;
+  document.getElementById('top-round').textContent=state.round||1;
+  const fb=document.getElementById('freeze-bar');
+  if(fb)fb.className='freeze-bar'+(state.freeze?' show':'');
+  if(state.timerRunning!==undefined){
+    timerRunning=state.timerRunning;timerLeft=state.timerLeft||300;
+    if(timerRunning)startLocalTimer(); else {clearInterval(localTimerInterval);updateTimerDisplay();}
+  }
+}
+
+// ─────────────────────────────────────────
+// TABS
+// ─────────────────────────────────────────
+function switchTab(tab){
+  currentTab=tab;
+  document.querySelectorAll('.nav-tab').forEach((t,i)=>{
+    const ts=['dashboard','teams','stocks','events','round','minigame','stats'];
+    t.classList.toggle('active',ts[i]===tab);
+  });
+  renderTab(tab);
+}
+function renderTab(tab){
+  if(!state||!document.getElementById('main-content'))return;
+  const el=document.getElementById('main-content');
+  if(tab==='dashboard')el.innerHTML=dashHTML();
+  else if(tab==='teams')el.innerHTML=teamsHTML();
+  else if(tab==='stocks')el.innerHTML=stocksHTML();
+  else if(tab==='events')el.innerHTML=eventsHTML();
+  else if(tab==='round')el.innerHTML=roundHTML();
+  else if(tab==='minigame')el.innerHTML=mgHTML();
+  else if(tab==='stats')el.innerHTML=statsHTML();
+}
+
+// ─────────────────────────────────────────
+// DASHBOARD
+// ─────────────────────────────────────────
+function dashHTML(){
+  const teams=Object.values(state.teams||{});
+  const sorted=[...teams].sort((a,b)=>calcAsset(b)-calcAsset(a));
+  const maxA=sorted[0]?calcAsset(sorted[0]):1000000;
+  const stockCards=STOCKS.map(st=>{
+    const p=state.prices?.[st.id]||st.startPrice;
+    const hist=(state.priceHistory?.[st.id])||[p];
+    const prev=hist.length>1?hist[hist.length-2]:st.startPrice;
+    const chg=p-prev;const pct=((chg/prev)*100).toFixed(2);const up=chg>=0;
+    return `<div class="stock-tile"><div class="bar" style="background:${st.color}"></div>
+      <div style="padding-left:8px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+          <div><div style="font-weight:700;color:${st.color}">${st.name}</div><div style="font-size:10px;color:var(--text3)">${st.type}</div></div>
+          <span class="badge ${up?'badge-up':'badge-down'}">${up?'▲':'▼'} ${Math.abs(pct)}%</span>
+        </div>
+        <div style="font-family:var(--font-mono);font-size:20px;font-weight:700;color:${up?'var(--up)':'var(--down)'}">${p.toLocaleString()}원</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:10px">
+          <button class="btn btn-sm btn-up" onclick="send({type:'CHANGE_PRICE',stockId:'${st.id}',pct:3})">+3%</button>
+          <button class="btn btn-sm btn-up" onclick="send({type:'CHANGE_PRICE',stockId:'${st.id}',pct:10})">+10%</button>
+          <button class="btn btn-sm btn-down" onclick="send({type:'CHANGE_PRICE',stockId:'${st.id}',pct:-3})">-3%</button>
+          <button class="btn btn-sm btn-down" onclick="send({type:'CHANGE_PRICE',stockId:'${st.id}',pct:-10})">-10%</button>
+          <button class="btn btn-sm" onclick="quickRandom('${st.id}')">🎲</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  const rankBars=sorted.map((t,i)=>{
+    const a=calcAsset(t);const p=Math.round((a/maxA)*100);
+    const cs=['#f59e0b','#94a3b8','#cd7f32','#64748b'];
+    return `<div class="rank-bar-wrap">
+      <div class="rank-bar-label"><span>${i+1}위 <b>${t.name}</b></span><span style="font-family:var(--font-mono)">${a.toLocaleString()}원</span></div>
+      <div class="rank-bar"><div class="rank-bar-fill" style="width:${p}%;background:${cs[i]||'#475569'}"></div></div>
+    </div>`;
+  }).join('')||'<p style="color:var(--text3);font-size:13px">팀이 없습니다.</p>';
+  const logs=[...(state.eventLog||[])].reverse().slice(0,6).map(l=>`
+    <div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">
+      <span style="color:var(--text3);font-family:var(--font-mono);min-width:72px">${new Date(l.ts).toLocaleTimeString('ko-KR')}</span>
+      <span style="color:var(--text2)">${l.msg}</span>
+    </div>`).join('')||'<p style="color:var(--text3);font-size:13px">없음</p>';
+  return `<div style="display:grid;grid-template-columns:1fr 300px;gap:14px">
+    <div><div class="grid4" style="margin-bottom:14px">${stockCards}</div>
+      <div class="card"><div class="card-title">📊 팀 랭킹</div>${rankBars}</div></div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="card">
+        <div class="card-title">⚡ 빠른 실행</div>
+        <button class="btn btn-accent" style="width:100%;margin-bottom:7px" onclick="switchTab('events')">📢 이벤트 발행</button>
+        <button class="btn" style="width:100%;margin-bottom:7px" onclick="showModal('broadcast-modal')">📣 전팀 공지</button>
+        <button class="btn ${state.freeze?'btn-success':'btn-blue'}" style="width:100%;margin-bottom:7px" onclick="send({type:'TOGGLE_FREEZE'})">
+          ${state.freeze?'🔓 거래 동결 해제':'🔒 거래 동결'}</button>
+        <button class="btn btn-accent" style="width:100%" onclick="showResultScreen()">🏆 결과 발표</button>
+      </div>
+      <div class="card"><div class="card-title">📝 최근 로그</div>${logs}</div>
+    </div>
+  </div>`;
+}
+
+// ─────────────────────────────────────────
+// TEAMS
+// ─────────────────────────────────────────
+function teamsHTML(){
+  const rows=Object.entries(state.teams||{}).map(([id,t])=>{
+    const a=calcAsset(t);
+    const h=STOCKS.filter(s=>(t.holdings||{})[s.id]>0).map(s=>`<span class="tag tag-${s.id}" style="font-size:10px;cursor:default">${s.name} ${t.holdings[s.id]}주</span>`).join(' ');
+    return `<tr>
+      <td><b>${t.name}</b></td>
+      <td><span style="font-family:var(--font-mono);font-size:11px;background:var(--bg3);padding:2px 8px;border-radius:4px;color:var(--accent)">${t.code}</span></td>
+      <td style="font-family:var(--font-mono)">${t.cash.toLocaleString()}원</td>
+      <td style="font-family:var(--font-mono);color:${a>=1000000?'var(--up)':'var(--down)'}">${a.toLocaleString()}원</td>
+      <td>${h||'<span style="color:var(--text3)">없음</span>'}</td>
+      <td><div style="display:flex;gap:6px">
+        <button class="btn btn-sm" onclick="openMoneyModal('${id}')">💰</button>
+        <button class="btn btn-sm btn-danger" onclick="if(confirm('삭제?'))send({type:'DELETE_TEAM',teamId:'${id}'})">삭제</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+  return `<div style="display:grid;grid-template-columns:360px 1fr;gap:14px">
+    <div class="card">
+      <div class="card-title">➕ 팀 생성</div>
+      <div class="form-row"><label>팀 이름</label><input id="new-name" placeholder="예: 1조"></div>
+      <div class="form-row c2">
+        <div><label>접속 코드</label><input id="new-code" placeholder="예: TEAM1" style="text-transform:uppercase"></div>
+        <div><label>비밀번호</label><input id="new-pw" placeholder="예: 1234"></div>
+      </div>
+      <div class="form-row"><label>초기 자금</label><input id="new-cash" type="number" value="1000000"></div>
+      <button class="btn btn-accent" style="width:100%" onclick="createTeam()">팀 생성</button>
+    </div>
+    <div class="card">
+      <div class="card-title">👥 팀 목록</div>
+      ${Object.keys(state.teams||{}).length===0?'<p style="color:var(--text3);font-size:13px">팀이 없습니다.</p>':
+      `<div style="overflow-x:auto"><table><thead><tr><th>팀명</th><th>코드</th><th>현금</th><th>총자산</th><th>보유</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`}
+    </div>
+  </div>`;
+}
+function createTeam(){
+  const name=document.getElementById('new-name').value.trim();
+  const code=document.getElementById('new-code').value.trim();
+  const pw=document.getElementById('new-pw').value.trim();
+  const cash=parseInt(document.getElementById('new-cash').value)||1000000;
+  if(!name||!code||!pw){toast('모든 항목을 입력하세요','danger');return;}
+  send({type:'CREATE_TEAM',name,code,pw,cash});
+}
+function openMoneyModal(id){
+  moneyTargetId=id;
+  document.getElementById('money-team-label').textContent=(state.teams[id]?.name||'')+' — 현재: '+(state.teams[id]?.cash||0).toLocaleString()+'원';
+  showModal('money-modal');
+}
+function applyMoney(){
+  send({type:'ADJUST_MONEY',teamId:moneyTargetId,adjustType:document.getElementById('money-type').value,amount:parseInt(document.getElementById('money-amount').value)||0});
+  hideModal('money-modal');toast('자금 조정 완료','success');
+}
+
+// ─────────────────────────────────────────
+// STOCKS
+// ─────────────────────────────────────────
+function stocksHTML(){
+  const cards=STOCKS.map(st=>{
+    const p=state.prices?.[st.id]||st.startPrice;
+    const rc=randomConfig[st.id]||{min:-10,max:10};
+    return `<div class="card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <div style="width:10px;height:10px;border-radius:50%;background:${st.color}"></div>
+        <span style="font-weight:700;font-size:14px;color:${st.color}">${st.name}</span>
+        <span style="font-family:var(--font-mono);font-size:18px;font-weight:700;margin-left:auto">${p.toLocaleString()}원</span>
+      </div>
+      <div class="form-row c2">
+        <div><label>% 변동</label><input type="number" id="pct-${st.id}" placeholder="+10 또는 -5"></div>
+        <div style="display:flex;align-items:flex-end;gap:6px">
+          <button class="btn btn-up" onclick="applyPct('${st.id}')">적용</button>
+        </div>
+      </div>
+      <div class="form-row c2">
+        <div><label>절대값</label><input type="number" id="abs-${st.id}" placeholder="${p.toLocaleString()}"></div>
+        <div style="display:flex;align-items:flex-end">
+          <button class="btn btn-blue" onclick="applyAbs('${st.id}')">설정</button>
+        </div>
+      </div>
+      <hr class="sdiv">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:6px">랜덤 범위 (%)</div>
+      <div class="form-row c2">
+        <div><label>최소</label><input type="number" id="rmin-${st.id}" value="${rc.min}"></div>
+        <div><label>최대</label><input type="number" id="rmax-${st.id}" value="${rc.max}"></div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm" onclick="saveRC('${st.id}')">범위 저장</button>
+        <button class="btn btn-sm" style="background:rgba(168,85,247,.1);border-color:rgba(168,85,247,.3);color:#a855f7" onclick="quickRandom('${st.id}')">🎲 랜덤</button>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="grid2" style="margin-bottom:14px">${cards}</div>
+  <div class="card"><div class="card-title">🎲 전체 변동</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-accent" onclick="allRandom()">전 종목 랜덤</button>
+      <button class="btn" onclick="pattern('bull')">🐂 강세장 +5~+15%</button>
+      <button class="btn" onclick="pattern('bear')">🐻 약세장 -15~-5%</button>
+      <button class="btn" onclick="pattern('volatile')">⚡ 변동장 -20~+20%</button>
+    </div>
+  </div>`;
+}
+function applyPct(id){const v=parseFloat(document.getElementById('pct-'+id).value);if(isNaN(v)){toast('값 입력','danger');return;}send({type:'CHANGE_PRICE',stockId:id,pct:v});}
+function applyAbs(id){const v=parseInt(document.getElementById('abs-'+id).value);if(isNaN(v)||v<=0){toast('유효한 금액 입력','danger');return;}send({type:'CHANGE_PRICE',stockId:id,absVal:v});}
+function saveRC(id){randomConfig[id]={min:parseFloat(document.getElementById('rmin-'+id).value)||-10,max:parseFloat(document.getElementById('rmax-'+id).value)||10};toast('범위 저장','success');}
+function quickRandom(id){const c=randomConfig[id]||{min:-10,max:10};const p=c.min+Math.random()*(c.max-c.min);send({type:'CHANGE_PRICE',stockId:id,pct:p});}
+function allRandom(){const cfg={};STOCKS.forEach(s=>{cfg[s.id]=randomConfig[s.id]||{min:-10,max:10};});send({type:'RANDOM_PRICE',config:cfg});}
+function pattern(t){const m={bull:[5,15],bear:[-15,-5],volatile:[-20,20]};const[mn,mx]=m[t];const cfg={};STOCKS.forEach(s=>{cfg[s.id]={min:mn,max:mx};});send({type:'RANDOM_PRICE',config:cfg});}
+
+// ─────────────────────────────────────────
+// EVENTS
+// ─────────────────────────────────────────
+function eventsHTML(){
+  const presets=(state.presets||[]).map((p,i)=>`
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <div style="flex:1"><div style="font-weight:600;font-size:13px">${p.title}</div>
+      <div style="font-size:11px;color:var(--text3)">${(p.targets||[]).join(', ')} · ${p.changeType==='pct'?p.value+'%':p.value+'원'}</div></div>
+      <button class="btn btn-sm btn-accent" onclick="loadPreset(${i})">적용</button>
+      <button class="btn btn-sm btn-danger" onclick="send({type:'DELETE_PRESET',index:${i}})">삭제</button>
+    </div>`).join('');
+  return `<div class="grid2">
+    <div class="card">
+      <div class="card-title">📢 이벤트 발행</div>
+      <div class="form-row"><label>제목</label><input id="ev-title" placeholder="경쟁사 파산 발표!"></div>
+      <div class="form-row"><label>설명 (뉴스 티커)</label><textarea id="ev-desc" rows="2" style="resize:none"></textarea></div>
+      <div class="form-row"><label>대상 종목</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+          ${STOCKS.map(s=>`<span class="tag tag-${s.id}" id="etag-${s.id}" onclick="toggleTag('${s.id}')">${s.name}</span>`).join('')}
+        </div>
+      </div>
+      <div class="form-row c2">
+        <div><label>방식</label><select id="ev-type"><option value="pct">% 변동</option><option value="abs_delta">금액 변동 (±원)</option><option value="abs_set">절대값</option></select></div>
+        <div><label>값</label><input type="number" id="ev-val" placeholder="+20 또는 -15"></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-accent" onclick="applyEvent()">📢 발행</button>
+        <button class="btn" onclick="showModal('preset-modal')">프리셋 저장</button>
+      </div>
+    </div>
+    <div class="card"><div class="card-title">📌 프리셋</div>
+      ${presets||'<p style="color:var(--text3);font-size:13px">없음</p>'}
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <div class="card-title">📜 이벤트 로그</div>
+    <div style="max-height:220px;overflow-y:auto">
+      ${[...(state.eventLog||[])].reverse().slice(0,30).map(l=>`
+        <div style="display:flex;gap:10px;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">
+          <span style="color:var(--text3);font-family:var(--font-mono);min-width:80px">${new Date(l.ts).toLocaleTimeString('ko-KR')}</span>
+          <span style="color:var(--text2)">${l.msg}</span>
+        </div>`).join('')||'<p style="color:var(--text3)">없음</p>'}
+    </div>
+  </div>`;
+}
+function toggleTag(id){const el=document.getElementById('etag-'+id);if(!el)return;if(evTags.has(id)){evTags.delete(id);el.className=`tag tag-${id}`;}else{evTags.add(id);el.className=`tag tag-${id} sel-${id}`;}}
+function applyEvent(){
+  if(!evTags.size){toast('종목 선택','danger');return;}
+  const title=document.getElementById('ev-title').value.trim()||'이벤트';
+  const desc=document.getElementById('ev-desc').value.trim();
+  const changeType=document.getElementById('ev-type').value;
+  const value=parseFloat(document.getElementById('ev-val').value);
+  if(isNaN(value)){toast('값 입력','danger');return;}
+  send({type:'PUBLISH_EVENT',title,desc,targets:[...evTags],changeType,value});
+  toast(`이벤트: "${title}" 발행`,'success');
+}
+function savePreset(){
+  const name=document.getElementById('preset-name').value.trim();
+  if(!name){toast('이름 입력','danger');return;}
+  const changeType=document.getElementById('ev-type').value;
+  const value=parseFloat(document.getElementById('ev-val').value)||0;
+  send({type:'SAVE_PRESET',preset:{title:name,targets:[...evTags],changeType,value}});
+  hideModal('preset-modal');toast('프리셋 저장','success');
+}
+function loadPreset(i){
+  const p=(state.presets||[])[i];if(!p)return;
+  document.getElementById('ev-title').value=p.title;
+  document.getElementById('ev-type').value=p.changeType;
+  document.getElementById('ev-val').value=p.value;
+  evTags.clear();
+  STOCKS.forEach(s=>{const el=document.getElementById('etag-'+s.id);if(el)el.className=`tag tag-${s.id}`;});
+  (p.targets||[]).forEach(id=>{evTags.add(id);const el=document.getElementById('etag-'+id);if(el)el.className=`tag tag-${id} sel-${id}`;});
+  toast('프리셋 불러오기','info');
+}
+
+// ─────────────────────────────────────────
+// ROUND
+// ─────────────────────────────────────────
+function roundHTML(){
+  const s=state||{};
+  return `<div class="grid2">
+    <div class="card"><div class="card-title">⏱ 타이머</div>
+      <div style="text-align:center;padding:14px 0">
+        <div style="font-family:var(--font-mono);font-size:60px;font-weight:700" id="round-timer-big">--:--</div>
+        <div style="font-size:12px;color:var(--text3)">ROUND <span style="color:var(--accent)">${s.round||1}</span>/${s.maxRound||5}</div>
+      </div>
+      <div class="form-row c2">
+        <div><label>라운드 시간 (초)</label><input type="number" id="tsec" value="${s.timerSec||300}" min="30"></div>
+        <div style="display:flex;align-items:flex-end"><button class="btn" onclick="send({type:'TIMER_SET',sec:parseInt(document.getElementById('tsec').value)||300});toast('설정 적용','success')">적용</button></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-success" onclick="toggleTimer()">▶/⏸ 시작/정지</button>
+        <button class="btn btn-blue" onclick="send({type:'FORCE_NEXT_ROUND'})">⏭ 다음 라운드</button>
+        <button class="btn" onclick="send({type:'TIMER_RESET'})">↩ 리셋</button>
+      </div>
+    </div>
+    <div class="card"><div class="card-title">🔒 거래 동결</div>
+      <div style="padding:14px;border-radius:var(--r2);background:${s.freeze?'rgba(59,130,246,.1)':'rgba(255,255,255,.03)'};border:1px solid ${s.freeze?'rgba(59,130,246,.3)':'var(--border)'};text-align:center;margin-bottom:12px">
+        <div style="font-size:26px;margin-bottom:4px">${s.freeze?'🔒':'🔓'}</div>
+        <div style="font-weight:600;color:${s.freeze?'var(--blue)':'var(--text2)'}">${s.freeze?'동결 중':'거래 가능'}</div>
+      </div>
+      <button class="btn ${s.freeze?'btn-success':'btn-danger'}" style="width:100%" onclick="send({type:'TOGGLE_FREEZE'})">${s.freeze?'🔓 해제':'🔒 동결'}</button>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px"><div class="card-title">라운드 현황</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
+      ${Array.from({length:s.maxRound||5},(_,i)=>{const r=i+1;const done=r<(s.round||1);const cur=r===(s.round||1);
+      return `<div style="background:${cur?'rgba(56,189,248,.1)':done?'rgba(34,197,94,.05)':'var(--bg3)'};border:1px solid ${cur?'var(--accent)':done?'var(--green)':'var(--border)'};border-radius:var(--r2);padding:14px;text-align:center">
+        <div style="font-family:var(--font-mono);font-size:22px;font-weight:700;color:${cur?'var(--accent)':done?'var(--green)':'var(--text3)'}">${r}</div>
+        <div style="font-size:11px;color:${cur?'var(--accent)':done?'var(--green)':'var(--text3)'}">${cur?'진행중':done?'완료':'대기'}</div>
+      </div>`;}).join('')}
+    </div>
+  </div>`;
+}
+setInterval(()=>{
+  const el=document.getElementById('round-timer-big');if(!el)return;
+  const s=timerRunning?localLeft:timerLeft;const m=Math.floor(s/60);const ss=s%60;
+  el.textContent=timerRunning?`${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`:'--:--';
+  el.style.color=s<=30&&timerRunning?'var(--up)':'var(--text)';
+},500);
+
+// ─────────────────────────────────────────
+// MINI GAME
+// ─────────────────────────────────────────
+let selMg=null;
+function mgHTML(){
+  const mg=state.minigame;
+  return `<div class="grid2">
+    <div class="card"><div class="card-title">🎮 유형 선택</div>
+      <div class="grid3" id="mg-options">
+        ${['ox','roulette','predict'].map((t,i)=>{
+          const d=[{ico:'❓',nm:'OX 퀴즈',ds:'정답 팀 보상'},{ico:'🎰',nm:'룰렛',ds:'랜덤 이벤트'},{ico:'📊',nm:'주가 예측',ds:'예측 성공 보상'}][i];
+          return `<div class="mg-option ${selMg===t||mg?.type===t?'sel':''}" onclick="selMg='${t}';renderTab('minigame')">
+            <div class="ico">${d.ico}</div><div class="nm">${d.nm}</div><div class="ds">${d.ds}</div></div>`;
+        }).join('')}
+      </div>
+    </div>
+    <div class="card" id="mg-cfg">${selMg?mgCfgHTML(selMg):'<p style="color:var(--text3);font-size:13px">좌측에서 유형을 선택하세요.</p>'}</div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <div class="card-title">🕹 상태</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:10px">현재: <b style="color:var(--accent)">${mg?{ox:'OX 퀴즈',roulette:'룰렛',predict:'주가 예측'}[mg.type]||'없음':'없음'}</b> · <b style="color:${mg?.active?'var(--green)':'var(--text3)'}">${mg?.active?'진행중':'대기'}</b></p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-success" onclick="send({type:'ACTIVATE_MINIGAME'})">▶ 플레이어 화면에 표시</button>
+      <button class="btn btn-danger" onclick="send({type:'DEACTIVATE_MINIGAME'})">■ 종료</button>
+    </div>
+  </div>`;
+}
+function mgCfgHTML(t){
+  if(t==='ox')return `<div class="card-title">❓ OX 퀴즈 설정</div>
+    <div class="form-row"><label>문제</label><textarea id="mg-q" rows="2" style="resize:none" placeholder="김해푸드는 흑자 달성했다."></textarea></div>
+    <div class="form-row c2"><div><label>정답</label><select id="mg-ans"><option value="O">O</option><option value="X">X</option></select></div>
+    <div><label>보상(원)</label><input type="number" id="mg-reward" value="100000"></div></div>
+    <button class="btn btn-accent" onclick="saveMg('ox')">저장</button>`;
+  if(t==='roulette')return `<div class="card-title">🎰 룰렛 설정</div>
+    <div class="form-row c2"><div><label>이벤트</label><select id="mg-rl"><option value="bonus">자금 보너스</option><option value="penalty">자금 페널티</option></select></div>
+    <div><label>값(원)</label><input type="number" id="mg-rv" value="100000"></div></div>
+    <button class="btn btn-accent" onclick="saveMg('roulette')">저장</button>`;
+  if(t==='predict')return `<div class="card-title">📊 예측 설정</div>
+    <div class="form-row"><label>종목</label><select id="mg-ps">${STOCKS.map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select></div>
+    <div class="form-row"><label>보상(원)</label><input type="number" id="mg-pr" value="150000"></div>
+    <button class="btn btn-accent" onclick="saveMg('predict')">저장</button>`;
+}
+function saveMg(t){
+  let cfg={type:t,active:false};
+  if(t==='ox'){cfg.question=document.getElementById('mg-q')?.value;cfg.answer=document.getElementById('mg-ans')?.value;cfg.reward=parseInt(document.getElementById('mg-reward')?.value)||100000;}
+  if(t==='roulette'){cfg.eventType=document.getElementById('mg-rl')?.value;cfg.value=parseInt(document.getElementById('mg-rv')?.value)||100000;}
+  if(t==='predict'){cfg.stock=document.getElementById('mg-ps')?.value;cfg.reward=parseInt(document.getElementById('mg-pr')?.value)||150000;}
+  send({type:'SET_MINIGAME',config:cfg});toast('미니게임 설정 저장','success');
+}
+
+// ─────────────────────────────────────────
+// STATS
+// ─────────────────────────────────────────
+function statsHTML(){
+  const teams=Object.values(state.teams||{});
+  if(!teams.length)return '<div class="card"><p style="color:var(--text3)">팀 없음</p></div>';
+  const rounds=state.roundStats||[];
+  const headers=`<th>팀</th>${Array.from({length:state.maxRound||5},(_,i)=>`<th>R${i+1}</th>`).join('')}<th>현재</th>`;
+  const rows=teams.map(t=>{
+    const cells=Array.from({length:state.maxRound||5},(_,i)=>{
+      const rs=rounds.find(r=>r.round===i+1);
+      if(!rs||!rs.teams[t.id])return '<td style="color:var(--text3)">—</td>';
+      const a=rs.teams[t.id].asset;
+      const pr=i>0?(rounds.find(r=>r.round===i)||{teams:{}}).teams[t.id]?.asset||1000000:1000000;
+      const d=a-pr;
+      return `<td><div style="font-family:var(--font-mono);font-size:11px">${a.toLocaleString()}</div><div style="font-size:10px;color:${d>=0?'var(--up)':'var(--down)'}">${d>=0?'+':''}${d.toLocaleString()}</div></td>`;
+    }).join('');
+    const cur=calcAsset(t);
+    return `<tr><td><b>${t.name}</b></td>${cells}<td style="font-family:var(--font-mono);font-weight:700;color:${cur>=1000000?'var(--up)':'var(--down)'}">${cur.toLocaleString()}</td></tr>`;
+  }).join('');
+  return `<div class="card">
+    <div class="card-title">📊 라운드별 자산</div>
+    <div style="overflow-x:auto"><table><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table></div>
+  </div>
+  <div class="card" style="margin-top:14px"><div class="card-title">🏆 현재 순위</div>
+    ${[...teams].sort((a,b)=>calcAsset(b)-calcAsset(a)).map((t,i)=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
+        <span style="font-family:var(--font-mono);font-size:18px;font-weight:700;min-width:24px;color:${['gold','silver','#cd7f32'][i]||'var(--text3)'}">${i+1}</span>
+        <span style="flex:1;font-weight:600">${t.name}</span>
+        <span style="font-family:var(--font-mono)">${calcAsset(t).toLocaleString()}원</span>
+      </div>`).join('')}
+  </div>`;
+}
+
+// ─────────────────────────────────────────
+// RESULT
+// ─────────────────────────────────────────
+function showResultScreen(){
+  const teams=Object.values(state.teams||{}).sort((a,b)=>calcAsset(b)-calcAsset(a));
+  if(!teams.length)return;
+  const top3=teams.slice(0,3);
+  let podiumHTML='';
+  [[1,'p2','🥈'],[0,'p1','🥇'],[2,'p3','🥉']].forEach(([idx,cls,medal])=>{
+    if(!top3[idx])return;
+    const t=top3[idx];const a=calcAsset(t);
+    podiumHTML+=`<div class="pcol">
+      <div style="font-weight:700;font-size:13px;max-width:110px;text-align:center">${t.name}</div>
+      <div style="font-family:var(--font-mono);font-size:11px;color:var(--text2)">${a.toLocaleString()}원</div>
+      <div class="pblock ${cls}">${medal}</div>
+    </div>`;
+  });
+  document.getElementById('result-podium').innerHTML=podiumHTML;
+  document.getElementById('result-winner').textContent=`🏆 ${teams[0].name} 우승!`;
+  document.getElementById('result-list').innerHTML=teams.map((t,i)=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:10px;border-bottom:1px solid var(--border)">
+      <span style="font-family:var(--font-mono);font-size:15px;font-weight:700;min-width:22px">${i+1}</span>
+      <span style="flex:1;font-weight:500">${t.name}</span>
+      <span style="font-family:var(--font-mono)">${calcAsset(t).toLocaleString()}원</span>
+    </div>`).join('');
+  document.getElementById('result-screen').classList.add('show');
+}
+
+// ─────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────
+function calcAsset(team){
+  let total=team.cash||0;
+  Object.entries(team.holdings||{}).forEach(([id,qty])=>{total+=(state.prices?.[id]||0)*qty;});
+  return total;
+}
+function doBroadcast(){
+  send({type:'BROADCAST',title:document.getElementById('bc-title').value.trim()||'공지',body:document.getElementById('bc-body').value.trim()});
+  hideModal('broadcast-modal');toast('공지 발송','success');
+}
+function showModal(id){document.getElementById(id).classList.add('show');}
+function hideModal(id){document.getElementById(id).classList.remove('show');}
+function toast(msg,type='info'){
+  const el=document.createElement('div');el.className=`toast ${type}`;el.textContent=msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(()=>el.remove(),3000);
+}
+</script>
+</body>
+</html>
 
